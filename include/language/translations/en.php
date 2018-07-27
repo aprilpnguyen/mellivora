@@ -64,6 +64,9 @@ $lang['signup_email_success'] =
     '{team_name}, your registration at {site_name} was successful.' .
     "\r\n" .
     "\r\n" .
+    '{signup_email_validation_link}' .
+    "\r\n" .
+    "\r\n" .
     '{signup_email_availability}' .
     "\r\n" .
     "\r\n" .
@@ -77,8 +80,11 @@ $lang['signup_email_success'] =
     "\r\n" .
     '{site_name}'
 ;
-$lang['signup_email_account_availability_message_login_now'] = 'You can now log in using your email and chosen password.';
-$lang['signup_email_account_availability_message_login_later'] = 'Once the competition starts, please use this email address to log in.';
+
+$lang['signup_email_click_on_validation_link_message'] = 'Please click on this link to validate your email';
+$lang['signup_email_account_availability_message_login_now'] = 'After validating your email, you can log in using your email and chosen password.';
+$lang['signup_email_account_availability_message_login_later'] = 'Once you have validated your email and the competition starts, please use this email address to log in.';
+$lang['signup_email_validation_success_message'] = 'Your email has been validated';
 
 $lang['register_interest'] = 'Register interest';
 $lang['register_interest_text'] = 'We are likely to run more CTFs in the future. Input your email below if you are interested in hearing from us about future competitions. We will not spam you. Your email address will not be shared with third parties.';

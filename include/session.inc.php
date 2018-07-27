@@ -91,7 +91,8 @@ function login_create($email, $password, $remember_me) {
             'download_key',
             'class',
             'enabled',
-            '2fa_status'
+            '2fa_status',
+            'email_validated'
         ),
         array(
             'email'=>$email
@@ -101,6 +102,15 @@ function login_create($email, $password, $remember_me) {
     if (!check_passhash($password, $user['passhash'])) {
         message_error('Login failed');
     }
+
+    // Check if the email has been validated
+    if (!$user['email_validated']) {
+        //TODO: Translate this
+        message_generic('Ooops!', 'Your email has not been not validated.
+         We have sent you an email containing a validation link. Please click on the link to validate your email.
+         Please contact the system administrator if you did not receive the email described above and your email is valid.');
+    }
+
 
     if (!$user['enabled']) {
         message_generic('Ooops!', 'Your account is not enabled.
@@ -423,10 +433,12 @@ function session_set_2fa_authenticated() {
     $_SESSION['2fa_status'] = 'authenticated';
 }
 
-function logout() {
+function logout($no_redirect = NULL) {
     login_session_destroy();
     login_cookie_destroy();
-    redirect(Config::get('MELLIVORA_CONFIG_INDEX_REDIRECT_TO'));
+    if(!$no_redirect) {
+        redirect(Config::get('MELLIVORA_CONFIG_INDEX_REDIRECT_TO'));
+    }
 }
 
 function register_account($email, $password, $team_name, $country, $type = null) {
@@ -477,6 +489,9 @@ function register_account($email, $password, $team_name, $country, $type = null)
         message_error(lang_get('user_already_exists'));
     }
 
+    // Generate the email validation code
+    $email_validation_code = hash('sha256', generate_random_string(128));
+
     $user_id = db_insert(
         'users',
         array(
@@ -487,7 +502,9 @@ function register_account($email, $password, $team_name, $country, $type = null)
             'added'=>time(),
             'enabled'=>(Config::get('MELLIVORA_CONFIG_ACCOUNTS_DEFAULT_ENABLED') ? '1' : '0'),
             'user_type'=>(isset($type) ? $type : 0),
-            'country_id'=>$country
+            'country_id'=>$country,
+            'email_validation_code' => $email_validation_code,
+            'email_validated' => 0
         )
     );
 
@@ -499,12 +516,17 @@ function register_account($email, $password, $team_name, $country, $type = null)
 
         // signup email
         $email_subject = lang_get('signup_email_subject', array('site_name' => Config::get('MELLIVORA_CONFIG_SITE_NAME')));
+
+        // email validation link
+        $email_validation_link = Config::get('MELLIVORA_CONFIG_SITE_URL') . "validate_email.php?email=$email&code=$email_validation_code";
+
         // body
         $email_body = lang_get(
             'signup_email_success',
             array(
                 'team_name' => htmlspecialchars($team_name),
                 'site_name' => Config::get('MELLIVORA_CONFIG_SITE_NAME'),
+                'signup_email_validation_link' =>  lang_get('signup_email_click_on_validation_link_message') . ": \r\n $email_validation_link",
                 'signup_email_availability' => Config::get('MELLIVORA_CONFIG_ACCOUNTS_DEFAULT_ENABLED') ?
                     lang_get('signup_email_account_availability_message_login_now') :
                     lang_get('signup_email_account_availability_message_login_later'),
@@ -534,3 +556,16 @@ function register_account($email, $password, $team_name, $country, $type = null)
     // no rows were inserted
     return false;
 }
+
+
+function update_user_email_validated($user_id) {
+
+    validate_id($user_id);
+
+    db_update(
+        'users',
+        array('email_validated' => 1),
+        array('id' => $user_id)
+    );
+}
+
